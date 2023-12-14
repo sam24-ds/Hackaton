@@ -26,6 +26,7 @@ from utils import *
 import uuid
 import time
 import tiktoken
+import tempfile
 
 
 load_dotenv()
@@ -417,16 +418,25 @@ def chatbot_interaction(collect_name: str, user_id: str, query: str, json_data: 
 
 
 
-@app.post("/summarize/")
-def transcribe_summarize(file: UploadFile = File(...)):
-        doc= read_doc(file.filename)
-        txt = doc[0].page_content[:]
-        bot_response = summarize_final(txt)
-        return {"bot_response": bot_response}
     
 
 
+@app.post("/summarize-2/")
+async def transcribe_summarize(file: UploadFile = File(...)):
+   # Write the uploaded file to a temporary file
+   with tempfile.NamedTemporaryFile(delete=False) as temp:
+        temp.write(await file.read())
+        temp_path = temp.name
 
+   # Now you can pass temp_path to read_doc
+   doc = read_doc(temp_path)
+   txt = doc[0].page_content[:]
+   bot_response = summarize_final(txt)
+
+   # Don't forget to delete the temporary file when you're done with it
+   os.unlink(temp_path)
+
+   return {"bot_response": bot_response}
 
 
 
